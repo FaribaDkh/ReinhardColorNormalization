@@ -11,6 +11,48 @@
 using namespace cv;
 using namespace std;
 
+void NormReinhard_new_version(Mat& src, Mat& ref) {
+	Mat target;
+	cvtColor(src, src, cv::COLOR_BGR2Lab);
+	src.convertTo(src, CV_32F);
+	cvtColor(ref, ref, cv::COLOR_BGR2Lab);
+	ref.convertTo(ref, CV_32F);
+	cv::imwrite("src_lab.png", src);
+	cv::imwrite("ref_lab.png", ref);
+	Scalar mean_src, stddev_src;
+	Scalar mean_ref, stddev_ref;
+
+	meanStdDev(src, mean_src, stddev_src);
+	meanStdDev(ref, mean_ref, stddev_ref);
+	Mat labchannel[3];
+	split(ref, labchannel);
+
+	labchannel[0] -= mean_ref[0];
+	labchannel[1] -= mean_ref[1];
+	labchannel[2] -= mean_ref[2];
+
+	labchannel[0] = float(stddev_ref[0] / stddev_src[0]) * labchannel[0];
+	labchannel[1] = float(stddev_ref[1] / stddev_src[1]) * labchannel[1];
+	labchannel[2] = float(stddev_ref[2] / stddev_src[2]) * labchannel[2];
+
+	labchannel[0] += mean_src[0];
+	labchannel[1] += mean_src[1];
+	labchannel[2] += mean_src[2];
+
+	Mat  fin_img;
+	vector<Mat> channels;
+
+	channels.push_back(labchannel[0]);
+
+	channels.push_back(labchannel[1]);
+
+	channels.push_back(labchannel[2]);
+
+	merge(channels, fin_img);
+	fin_img.convertTo(fin_img, CV_8U);
+	cvtColor(fin_img, fin_img, cv::COLOR_Lab2BGR);
+	cv::imwrite("result.png", fin_img);
+}
 
 void NormReinhard(Mat& src, Mat& ref)
 {
